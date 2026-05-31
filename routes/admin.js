@@ -5,6 +5,7 @@ const db = require('../db');
 const { requireAdmin } = require('../lib/auth');
 const { toCSV, toXLSX, questionnaireCSV, questionnaireXLSX } = require('../lib/export');
 const emp = require('../lib/employees');
+const reports = require('../lib/reports');
 const multer = require('multer');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -413,6 +414,84 @@ router.get('/employees/export.xlsx', async (req, res) => {
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', 'attachment; filename="employees.xlsx"');
   res.send(Buffer.from(buf));
+});
+
+// ============ 進捗ダッシュボード・帳票 ============
+
+// ファイル名にタイムスタンプ等を付けて送出するヘルパー
+function sendCSV(res, filename, csv) {
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(csv);
+}
+function sendXLSX(res, filename, buf) {
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(Buffer.from(buf));
+}
+
+// 1. 進捗ダッシュボード（集計JSON）
+router.get('/dashboard', (req, res) => {
+  res.json(reports.dashboard(req.tenantId));
+});
+
+// 健診日（巡回日）一覧 — 帳票の絞り込み用
+router.get('/checkup-dates', (req, res) => {
+  res.json(reports.checkupDates(req.tenantId));
+});
+
+// 2. 未対応者の一覧（JSON）
+router.get('/reports/unreserved', (req, res) => {
+  res.json(reports.unreservedEmployees(req.tenantId));
+});
+router.get('/reports/unsubmitted', (req, res) => {
+  res.json(reports.unsubmittedEmployees(req.tenantId));
+});
+
+// 2. 未対応者の出力（CSV/XLSX）
+router.get('/reports/unreserved.csv', (req, res) => {
+  sendCSV(res, 'unreserved.csv', reports.toCSV(reports.EMP_COLUMNS, reports.unreservedEmployees(req.tenantId)));
+});
+router.get('/reports/unreserved.xlsx', async (req, res) => {
+  sendXLSX(res, 'unreserved.xlsx', await reports.toXLSX('未予約者', reports.EMP_COLUMNS, reports.unreservedEmployees(req.tenantId)));
+});
+router.get('/reports/unsubmitted.csv', (req, res) => {
+  sendCSV(res, 'unsubmitted.csv', reports.toCSV(reports.EMP_COLUMNS, reports.unsubmittedEmployees(req.tenantId)));
+});
+router.get('/reports/unsubmitted.xlsx', async (req, res) => {
+  sendXLSX(res, 'unsubmitted.xlsx', await reports.toXLSX('問診未提出者', reports.EMP_COLUMNS, reports.unsubmittedEmployees(req.tenantId)));
+});
+
+// 3. 当日受付名簿（JSON / CSV / XLSX）— date必須
+router.get('/reports/roster', (req, res) => {
+  if (!req.query.date) return bad(res, '健診日(date)を指定してください');
+  res.json(reports.rosterRows(req.tenantId, req.query.date));
+});
+router.get('/reports/roster.csv', (req, res) => {
+  const date = req.query.date;
+  if (!date) return bad(res, '健診日(date)を指定してください');
+  sendCSV(res, `roster_${date}.csv`, reports.toCSV(reports.ROSTER_COLUMNS, reports.rosterRows(req.tenantId, date)));
+});
+router.get('/reports/roster.xlsx', async (req, res) => {
+  const date = req.query.date;
+  if (!date) return bad(res, '健診日(date)を指定してください');
+  sendXLSX(res, `roster_${date}.xlsx`, await reports.toXLSX(`受付名簿_${date}`, reports.ROSTER_COLUMNS, reports.rosterRows(req.tenantId, date)));
+});
+
+// 4. 問診結果の一括出力（健診機関向け・date絞り込み可）
+router.get('/reports/questionnaire-results.csv', (req, res) => {
+  const { questionLabels, rows } = reports.questionnaireMatrix(req.tenantId, { date: req.query.date });
+  const cols = reports.questionnaireResultColumns(questionLabels);
+  const data = reports.questionnaireResultRows(questionLabels, rows);
+  const suffix = req.query.date ? '_' + req.query.date : '';
+  sendCSV(res, `questionnaire_results${suffix}.csv`, reports.toCSV(cols, data));
+});
+router.get('/reports/questionnaire-results.xlsx', async (req, res) => {
+  const { questionLabels, rows } = reports.questionnaireMatrix(req.tenantId, { date: req.query.date });
+  const cols = reports.questionnaireResultColumns(questionLabels);
+  const data = reports.questionnaireResultRows(questionLabels, rows);
+  const suffix = req.query.date ? '_' + req.query.date : '';
+  sendXLSX(res, `questionnaire_results${suffix}.xlsx`, await reports.toXLSX('問診結果', cols, data));
 });
 
 module.exports = router;

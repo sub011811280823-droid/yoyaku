@@ -16,7 +16,7 @@ let coursesCache = [];
   $('link-reserve').href = $('link-reserve').textContent = `${location.origin}/t/${slug}`;
   $('link-q').href = $('link-q').textContent = `${location.origin}/t/${slug}/questionnaire`;
   initTabs();
-  loadReservations();
+  loadDashboard();
 })();
 
 $('logout').addEventListener('click', async (e) => {
@@ -27,9 +27,9 @@ $('logout').addEventListener('click', async (e) => {
 
 // ---- タブ ----
 const LOADERS = {
-  reservations: loadReservations, slots: loadSlots, courses: loadCourses,
+  dashboard: loadDashboard, reservations: loadReservations, slots: loadSlots, courses: loadCourses,
   options: loadOptions, employees: loadEmployeesTab, questions: loadQuestions,
-  responses: loadResponses, settings: loadSettings,
+  responses: loadResponses, reports: loadReports, settings: loadSettings,
 };
 function initTabs() {
   document.querySelectorAll('.tab').forEach((tab) => {
@@ -459,4 +459,107 @@ $('set-save').addEventListener('click', async () => {
     }) });
     toast('設定を保存しました');
   } catch (e) { toast(e.message, true); }
+});
+
+// ============ ダッシュボード ============
+function pctBar(pct) { return Math.max(0, Math.min(100, pct)); }
+async function loadDashboard() {
+  let d;
+  try { d = await api('/api/admin/dashboard'); } catch (e) { return toast(e.message, true); }
+
+  $('dash-kpi').innerHTML = `
+    <div class="kpi"><span class="kpi-ico">👥</span><div class="kpi-label">対象社員</div><div class="kpi-value">${d.total}</div><div class="kpi-sub">有効な登録社員</div></div>
+    <div class="kpi accent"><span class="kpi-ico">📅</span><div class="kpi-label">予約済み</div><div class="kpi-value">${d.reserved}</div><div class="kpi-sub">${d.reservedPct}% / 未予約 ${d.unreserved}名</div></div>
+    <div class="kpi accent"><span class="kpi-ico">📝</span><div class="kpi-label">問診提出済み</div><div class="kpi-value">${d.submitted}</div><div class="kpi-sub">${d.submittedPct}% / 未提出 ${d.unsubmitted}名</div></div>
+    <div class="kpi"><span class="kpi-ico">🗓️</span><div class="kpi-label">健診日</div><div class="kpi-value">${d.byDate.length}</div><div class="kpi-sub">巡回健診の開催日数</div></div>`;
+
+  $('dash-reserve-bar').style.width = pctBar(d.reservedPct) + '%';
+  $('dash-reserve-label').textContent = `${d.reserved} / ${d.total} 名（${d.reservedPct}%）`;
+  $('dash-reserve-legend').innerHTML =
+    `<span><span class="dot" style="background:var(--brand-500)"></span>予約済み ${d.reserved}名</span>
+     <span><span class="dot" style="background:var(--surface-2);border:1px solid var(--line)"></span>未予約 ${d.unreserved}名</span>`;
+
+  $('dash-submit-bar').style.width = pctBar(d.submittedPct) + '%';
+  $('dash-submit-label').textContent = `${d.submitted} / ${d.total} 名（${d.submittedPct}%）`;
+  $('dash-submit-legend').innerHTML =
+    `<span><span class="dot" style="background:var(--accent-500)"></span>提出済み ${d.submitted}名</span>
+     <span><span class="dot" style="background:var(--surface-2);border:1px solid var(--line)"></span>未提出 ${d.unsubmitted}名</span>`;
+
+  if (!d.byDate.length) { $('dash-date-tbody').innerHTML = ''; $('dash-date-empty').classList.remove('hidden'); return; }
+  $('dash-date-empty').classList.add('hidden');
+  $('dash-date-tbody').innerHTML = d.byDate.map((x) => {
+    const color = x.fillRate >= 90 ? 'var(--danger)' : x.fillRate >= 60 ? 'var(--warn)' : 'var(--accent-500)';
+    return `<tr>
+      <td><strong>${esc(x.date)}</strong></td>
+      <td>${x.slotCount}</td><td>${x.capacity}</td><td>${x.booked}</td><td>${x.remaining}</td>
+      <td>${x.fillRate}%</td>
+      <td style="width:160px;"><div class="fill-cell"><div class="fill-track"><div class="fill-val" style="width:${pctBar(x.fillRate)}%;background:${color};"></div></div></div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ============ 帳票出力 ============
+async function loadReports() {
+  // 未対応者カウント
+  try {
+    const [un, us] = await Promise.all([
+      api('/api/admin/reports/unreserved'),
+      api('/api/admin/reports/unsubmitted'),
+    ]);
+    $('cnt-unreserved').textContent = `${un.length}名`;
+    $('cnt-unsubmitted').textContent = `${us.length}名`;
+    window._reportCache = { unreserved: un, unsubmitted: us };
+  } catch (e) { toast(e.message, true); }
+
+  // 健診日セレクト
+  try {
+    const dates = await api('/api/admin/checkup-dates');
+    $('roster-date').innerHTML = dates.length
+      ? dates.map((d) => `<option value="${d}">${d}</option>`).join('')
+      : '<option value="">健診日なし</option>';
+    $('qr-date').innerHTML = '<option value="">すべての健診日</option>' + dates.map((d) => `<option value="${d}">${d}</option>`).join('');
+    updateReportLinks();
+  } catch (e) { toast(e.message, true); }
+
+  $('report-list-wrap').classList.add('hidden');
+}
+
+function renderReportList(title, list) {
+  $('report-list-title').textContent = title;
+  $('report-list-wrap').classList.remove('hidden');
+  if (!list.length) { $('report-list-tbody').innerHTML = ''; $('report-list-empty').classList.remove('hidden'); return; }
+  $('report-list-empty').classList.add('hidden');
+  $('report-list-tbody').innerHTML = list.map((e) => `
+    <tr><td>${esc(e.employee_code || '-')}</td><td>${esc(e.name)}</td><td>${esc(e.department || '-')}</td>
+    <td style="font-size:.82rem;">${esc(e.email || '-')}</td><td>${esc(e.phone || '-')}</td></tr>`).join('');
+}
+$('view-unreserved').addEventListener('click', () => renderReportList('未予約の社員', (window._reportCache || {}).unreserved || []));
+$('view-unsubmitted').addEventListener('click', () => renderReportList('問診未提出の社員', (window._reportCache || {}).unsubmitted || []));
+$('report-list-close').addEventListener('click', () => $('report-list-wrap').classList.add('hidden'));
+
+function updateReportLinks() {
+  const rd = $('roster-date').value;
+  $('roster-csv').href = `/api/admin/reports/roster.csv?date=${encodeURIComponent(rd)}`;
+  $('roster-xlsx').href = `/api/admin/reports/roster.xlsx?date=${encodeURIComponent(rd)}`;
+  const qd = $('qr-date').value;
+  const qs = qd ? `?date=${encodeURIComponent(qd)}` : '';
+  $('qr-csv').href = `/api/admin/reports/questionnaire-results.csv${qs}`;
+  $('qr-xlsx').href = `/api/admin/reports/questionnaire-results.xlsx${qs}`;
+}
+$('roster-date').addEventListener('change', () => { updateReportLinks(); $('roster-wrap').style.display = 'none'; $('roster-empty').classList.add('hidden'); });
+$('qr-date').addEventListener('change', updateReportLinks);
+
+$('roster-preview').addEventListener('click', async () => {
+  const date = $('roster-date').value;
+  if (!date) return toast('健診日を選択してください', true);
+  let rows;
+  try { rows = await api('/api/admin/reports/roster?date=' + encodeURIComponent(date)); } catch (e) { return toast(e.message, true); }
+  if (!rows.length) { $('roster-wrap').style.display = 'none'; $('roster-empty').classList.remove('hidden'); return; }
+  $('roster-empty').classList.add('hidden');
+  $('roster-wrap').style.display = '';
+  $('roster-tbody').innerHTML = rows.map((r) => `
+    <tr><td>${esc(r.start_time)}</td><td>${esc(r.employee_code || '-')}</td>
+    <td>${esc(r.name)}<br><span class="muted" style="font-size:.78rem;">${esc(r.kana || '')}</span></td>
+    <td>${esc(r.department || '-')}</td><td>${esc(r.gender || '-')}</td>
+    <td>${esc(r.course)}</td><td style="font-size:.82rem;">${esc(r.options || '-')}</td></tr>`).join('');
 });

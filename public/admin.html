@@ -17,18 +17,48 @@
 
   <main>
     <div class="tabs">
-      <button class="tab active" data-tab="reservations">予約管理</button>
+      <button class="tab active" data-tab="dashboard">ダッシュボード</button>
+      <button class="tab" data-tab="reservations">予約管理</button>
       <button class="tab" data-tab="slots">予約枠</button>
       <button class="tab" data-tab="courses">コース</button>
       <button class="tab" data-tab="options">オプション検査</button>
       <button class="tab" data-tab="employees">従業員マスタ</button>
       <button class="tab" data-tab="questions">問診設定</button>
       <button class="tab" data-tab="responses">問診回答</button>
+      <button class="tab" data-tab="reports">帳票出力</button>
       <button class="tab" data-tab="settings">設定</button>
     </div>
 
+    <!-- ダッシュボード -->
+    <section id="tab-dashboard">
+      <div class="page-head"><h2>進捗ダッシュボード</h2><p>対象社員全体の予約・問診の進捗と、巡回健診日ごとの予約状況を確認できます。</p></div>
+
+      <div class="kpi-grid" id="dash-kpi"></div>
+
+      <div class="card">
+        <div class="card-head"><h2>予約の進捗</h2><span class="muted" id="dash-reserve-label"></span></div>
+        <div class="progress"><div class="progress-bar" id="dash-reserve-bar"></div></div>
+        <div class="progress-legend" id="dash-reserve-legend"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>問診の進捗</h2><span class="muted" id="dash-submit-label"></span></div>
+        <div class="progress"><div class="progress-bar accent" id="dash-submit-bar"></div></div>
+        <div class="progress-legend" id="dash-submit-legend"></div>
+      </div>
+
+      <div class="card">
+        <h2>巡回健診日ごとの予約状況</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>健診日</th><th>枠数</th><th>定員</th><th>予約</th><th>残</th><th>充足率</th><th></th></tr></thead>
+          <tbody id="dash-date-tbody"></tbody>
+        </table></div>
+        <p id="dash-date-empty" class="empty hidden"><span class="ico">🗓️</span>健診枠がまだ登録されていません。</p>
+      </div>
+    </section>
+
     <!-- 予約管理 -->
-    <section id="tab-reservations">
+    <section id="tab-reservations" class="hidden">
       <div class="page-head"><h2>予約管理</h2><p>受診者の予約状況の確認・ステータス変更・エクスポートができます。</p></div>
       <div class="summary" id="res-summary"></div>
       <div class="card">
@@ -272,6 +302,72 @@
         </div>
         <div id="responses"></div>
         <p id="responses-empty" class="empty hidden"><span class="ico">📝</span>回答がまだありません。</p>
+      </div>
+    </section>
+
+    <!-- 帳票出力 -->
+    <section id="tab-reports" class="hidden">
+      <div class="page-head"><h2>帳票出力</h2><p>未対応者の抽出、当日受付名簿、健診機関向け問診結果をCSV/XLSXで出力できます。</p></div>
+
+      <div class="card">
+        <h2>未対応者の抽出</h2>
+        <p class="subtitle">催促連絡用に、未予約・問診未提出の社員を一覧化・出力できます。</p>
+        <div class="row" style="align-items:stretch;">
+          <div class="col report-tile">
+            <div class="report-tile-head"><strong>未予約の社員</strong><span class="badge neutral" id="cnt-unreserved">-</span></div>
+            <div class="btn-row" style="margin-top:10px;">
+              <button class="small secondary" id="view-unreserved">一覧を表示</button>
+              <a href="/api/admin/reports/unreserved.csv"><button class="small secondary" type="button">⬇ CSV</button></a>
+              <a href="/api/admin/reports/unreserved.xlsx"><button class="small" type="button">⬇ XLSX</button></a>
+            </div>
+          </div>
+          <div class="col report-tile">
+            <div class="report-tile-head"><strong>問診未提出の社員</strong><span class="badge neutral" id="cnt-unsubmitted">-</span></div>
+            <div class="btn-row" style="margin-top:10px;">
+              <button class="small secondary" id="view-unsubmitted">一覧を表示</button>
+              <a href="/api/admin/reports/unsubmitted.csv"><button class="small secondary" type="button">⬇ CSV</button></a>
+              <a href="/api/admin/reports/unsubmitted.xlsx"><button class="small" type="button">⬇ XLSX</button></a>
+            </div>
+          </div>
+        </div>
+        <div id="report-list-wrap" class="hidden" style="margin-top:16px;">
+          <div class="card-head"><h3 id="report-list-title"></h3><button class="ghost small" id="report-list-close">閉じる</button></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>社員番号</th><th>氏名</th><th>部署</th><th>メール</th><th>電話</th></tr></thead>
+            <tbody id="report-list-tbody"></tbody>
+          </table></div>
+          <p id="report-list-empty" class="empty hidden"><span class="ico">🎉</span>対象者はいません。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>当日の受付名簿</h2>
+        <p class="subtitle">巡回健診日を選んで、受付用の名簿（氏名・社員番号・時間・コース・オプション）を出力します。</p>
+        <div class="toolbar">
+          <div class="col"><label for="roster-date">健診日</label><select id="roster-date"></select></div>
+          <div class="col" style="display:flex;align-items:flex-end;gap:8px;">
+            <button class="secondary" id="roster-preview">プレビュー</button>
+            <a id="roster-csv"><button class="secondary" type="button">⬇ CSV</button></a>
+            <a id="roster-xlsx"><button type="button">⬇ XLSX</button></a>
+          </div>
+        </div>
+        <div class="table-wrap" id="roster-wrap" style="display:none;"><table>
+          <thead><tr><th>時間</th><th>社員番号</th><th>氏名</th><th>部署</th><th>性別</th><th>コース</th><th>オプション</th></tr></thead>
+          <tbody id="roster-tbody"></tbody>
+        </table></div>
+        <p id="roster-empty" class="empty hidden"><span class="ico">📋</span>この日の予約はありません。</p>
+      </div>
+
+      <div class="card">
+        <h2>問診結果の一括出力（健診機関向け）</h2>
+        <p class="subtitle">受診者の識別情報＋健診日時＋全問診回答をまとめて出力します。健診日で絞り込めます。</p>
+        <div class="toolbar">
+          <div class="col"><label for="qr-date">健診日で絞り込み</label><select id="qr-date"><option value="">すべての健診日</option></select></div>
+          <div class="col" style="display:flex;align-items:flex-end;gap:8px;">
+            <a id="qr-csv"><button class="secondary" type="button">⬇ CSV</button></a>
+            <a id="qr-xlsx"><button type="button">⬇ XLSX</button></a>
+          </div>
+        </div>
       </div>
     </section>
 

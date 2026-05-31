@@ -229,6 +229,28 @@ hr.sep{ border:none; border-top:1px solid var(--line); margin:16px 0; }
 /* ---------- Inline editor row (admin) ---------- */
 .edit-form{ background:var(--surface-2); border:1px dashed var(--line-strong); border-radius:var(--radius-sm); padding:14px; margin-top:10px; }
 
+/* ---------- Dashboard ---------- */
+.kpi-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:18px; }
+.kpi{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow-sm); position:relative; overflow:hidden; }
+.kpi .kpi-ico{ position:absolute; right:14px; top:14px; font-size:20px; opacity:.5; }
+.kpi .kpi-label{ font-size:.78rem; color:var(--muted); font-weight:600; }
+.kpi .kpi-value{ font-size:1.9rem; font-weight:800; letter-spacing:-.02em; margin-top:4px; }
+.kpi .kpi-sub{ font-size:.8rem; color:var(--muted); margin-top:2px; }
+.kpi.accent{ border-color:var(--brand-200); background:linear-gradient(135deg,#fff,var(--brand-50)); }
+
+.progress{ height:14px; border-radius:999px; background:var(--surface-2); overflow:hidden; border:1px solid var(--line); }
+.progress-bar{ height:100%; background:linear-gradient(90deg,var(--brand-500),var(--brand-400)); border-radius:999px; transition:width .5s ease; }
+.progress-bar.accent{ background:linear-gradient(90deg,var(--accent-500),#3fd0c2); }
+.progress-legend{ display:flex; gap:18px; margin-top:10px; font-size:.84rem; color:var(--ink-2); flex-wrap:wrap; }
+.progress-legend .dot{ display:inline-block; width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle; }
+
+.fill-cell{ display:flex; align-items:center; gap:8px; min-width:120px; }
+.fill-track{ flex:1; height:8px; border-radius:999px; background:var(--surface-2); overflow:hidden; border:1px solid var(--line); }
+.fill-val{ height:100%; border-radius:999px; }
+
+.report-tile{ border:1px solid var(--line); border-radius:var(--radius-sm); padding:15px; background:var(--surface-2); }
+.report-tile-head{ display:flex; align-items:center; justify-content:space-between; }
+
 @media (max-width:640px){
   main{ padding:18px 14px 50px; }
   .page-head h2{ font-size:1.25rem; }
