@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>健康診断 予約</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1><span class="brand-badge">🩺</span> <span id="tenant-name">健康診断 予約</span></h1>
+    <nav class="nav"><a href="#" id="emp-logout" class="hidden">ログアウト</a></nav>
+  </header>
+
+  <main>
+    <!-- 予約機能OFFの案内 -->
+    <div id="res-off" class="card hidden">
+      <div class="feature-off">この企業では現在オンライン予約を受け付けていません。</div>
+      <div id="off-questionnaire" class="hidden" style="margin-top:14px;">
+        <p>問診のみご利用いただけます。</p>
+        <a href="#" id="off-q-link"><button>問診に進む</button></a>
+      </div>
+    </div>
+
+    <!-- 従業員ログイン -->
+    <div id="emp-login" class="auth-card hidden" style="margin:40px auto;">
+      <div class="logo">🩺</div>
+      <h2>従業員ログイン</h2>
+      <p class="subtitle">ご予約には従業員ログインが必要です。</p>
+      <label id="lbl-loginid">ログインID</label>
+      <input type="text" id="loginId" autocomplete="username" />
+      <label id="lbl-pw">パスワード</label>
+      <input type="password" id="emppw" autocomplete="current-password" />
+      <p class="field-hint" id="login-hint"></p>
+      <div style="margin-top:18px;"><button id="emp-login-btn" style="width:100%;">ログイン</button></div>
+    </div>
+
+    <!-- 予約フォーム -->
+    <div id="reserve-ui" class="hidden">
+      <div id="emp-banner" class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span>ログイン中: <strong id="emp-name"></strong> <span class="muted" id="emp-dept"></span></span>
+        <span class="muted">適用補助額: <strong id="emp-subsidy"></strong></span>
+      </div>
+
+      <div class="card">
+        <h2>1. コースと日付を選ぶ</h2>
+        <div class="row">
+          <div class="col">
+            <label class="required" for="course">健診コース</label>
+            <select id="course"></select>
+          </div>
+          <div class="col">
+            <label class="required" for="date">受診日</label>
+            <input type="date" id="date" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>2. 時間枠を選ぶ</h2>
+        <div id="slots" class="slot-grid"></div>
+        <p id="slots-empty" class="empty hidden">該当する空き枠がありません。</p>
+      </div>
+
+      <div class="card">
+        <h2>3. 受診者情報</h2>
+        <form id="reserve-form">
+          <div class="row">
+            <div class="col"><label class="required" for="name">氏名</label><input type="text" id="name" required /></div>
+            <div class="col"><label class="required" for="kana">フリガナ</label><input type="text" id="kana" required /></div>
+          </div>
+          <div class="row">
+            <div class="col"><label for="birthday">生年月日</label><input type="date" id="birthday" /></div>
+            <div class="col">
+              <label for="gender">性別</label>
+              <select id="gender">
+                <option value="">選択しない</option>
+                <option value="男性">男性</option>
+                <option value="女性">女性</option>
+                <option value="その他">その他</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col"><label class="required" for="phone">電話番号</label><input type="tel" id="phone" required /></div>
+            <div class="col"><label for="email">メールアドレス</label><input type="email" id="email" placeholder="予約完了メール・カレンダー追加に使用" /></div>
+          </div>
+          <label for="note">備考</label>
+          <textarea id="note"></textarea>
+        </form>
+        <p class="subtitle">※ 生年月日・性別により、選択できるオプション検査が変わります。</p>
+      </div>
+
+      <div class="card">
+        <h2>4. オプション検査</h2>
+        <p class="subtitle">条件に該当する検査のみ選択できます。</p>
+        <div id="options"></div>
+        <p id="options-empty" class="empty hidden">選択可能なオプションはありません。</p>
+      </div>
+
+      <div class="card">
+        <h2>5. お支払い金額</h2>
+        <div class="cost-box" id="cost-box">
+          <div class="line"><span>コース料金</span><span id="c-course">—</span></div>
+          <div class="line"><span>オプション合計</span><span id="c-option">0円</span></div>
+          <div class="line"><span>補助額</span><span id="c-subsidy">0円</span></div>
+          <div class="line total"><span>自己負担額</span><span id="c-self">—</span></div>
+        </div>
+        <div style="margin-top:16px;">
+          <button id="submit-btn" disabled>この内容で予約する</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 完了画面 -->
+    <div id="done" class="card done-card hidden">
+      <div class="check">✅</div>
+      <h2>ご予約が完了しました</h2>
+      <p id="done-summary" class="muted"></p>
+      <p id="done-mail" class="subtitle"></p>
+
+      <h3>カレンダーに追加</h3>
+      <div class="cal-btns">
+        <a id="cal-google" target="_blank" rel="noopener">📅 Google カレンダー</a>
+        <a id="cal-outlook" target="_blank" rel="noopener">📅 Outlook</a>
+        <a id="cal-ics">📅 Apple/iCal (.ics)</a>
+      </div>
+
+      <div id="done-q" class="hidden" style="margin-top:24px; border-top:1px solid var(--border); padding-top:18px;">
+        <p>続けて事前問診にご回答ください（所要数分）。</p>
+        <a id="go-questionnaire"><button>問診に進む →</button></a>
+      </div>
+      <div style="margin-top:18px;"><a href="#" id="again">別の予約をする</a></div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="/common.js"></script>
+  <script src="/reserve.js"></script>
+</body>
+</html>

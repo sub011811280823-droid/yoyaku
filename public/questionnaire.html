@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>事前問診</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="app-header"><h1><span class="brand-badge">📝</span> <span id="tenant-name">事前問診</span></h1></header>
+  <main>
+    <div id="q-off" class="card hidden"><div class="feature-off">この企業では問診機能をご利用いただけません。</div></div>
+
+    <div id="q-ui" class="hidden">
+      <div class="card">
+        <h2>事前問診</h2>
+        <p class="subtitle">受診前の問診にご回答ください。</p>
+        <form id="q-form"></form>
+        <div style="margin-top:16px;"><button id="q-submit">回答を送信する</button></div>
+      </div>
+    </div>
+
+    <div id="q-done" class="card done-card hidden">
+      <div class="check">✅</div>
+      <h2>問診のご回答ありがとうございました</h2>
+      <p class="muted">当日も体調に変化があればスタッフにお伝えください。</p>
+    </div>
+  </main>
+  <div id="toast" class="toast"></div>
+  <script src="/common.js"></script>
+  <script src="/questionnaire.js"></script>
+</body>
+</html>

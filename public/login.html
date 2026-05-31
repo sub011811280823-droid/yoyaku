@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ログイン | 健診SaaS</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main class="auth-shell">
+    <div class="auth-card">
+      <div class="logo">🩺</div>
+      <h2 id="login-title">ログイン</h2>
+      <p class="subtitle" id="login-sub"></p>
+      <form id="login-form">
+        <label for="username">ユーザーID</label>
+        <input type="text" id="username" autocomplete="username" required />
+        <label for="password">パスワード</label>
+        <input type="password" id="password" autocomplete="current-password" required />
+        <div style="margin-top:20px;">
+          <button type="submit" style="width:100%;">ログイン</button>
+        </div>
+      </form>
+    </div>
+  </main>
+  <div id="toast" class="toast"></div>
+  <script src="/common.js"></script>
+  <script src="/login.js"></script>
+</body>
+</html>

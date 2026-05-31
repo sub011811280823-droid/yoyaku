@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>スーパー管理者</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1><span class="brand-badge">🛠️</span> スーパー管理者</h1>
+    <nav class="nav"><a href="#" id="logout">ログアウト</a></nav>
+  </header>
+  <main>
+    <div class="page-head"><h2>企業管理</h2><p>テナント（企業）の追加・機能設定・補助額・パスワード再設定ができます。</p></div>
+    <div class="card">
+      <h2>新しい企業を追加</h2>
+      <p class="subtitle">企業（テナント）と、その企業の管理者アカウントを同時に作成します。</p>
+      <form id="tenant-form">
+        <div class="row">
+          <div class="col">
+            <label class="required" for="t-slug">企業ID（slug・URLに使用）</label>
+            <input type="text" id="t-slug" placeholder="例: acme（英小文字・数字・ハイフン）" required />
+          </div>
+          <div class="col">
+            <label class="required" for="t-name">企業名</label>
+            <input type="text" id="t-name" placeholder="例: ACME株式会社" required />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <label class="required" for="t-admin">管理者ID</label>
+            <input type="text" id="t-admin" placeholder="例: acme-admin" required />
+          </div>
+          <div class="col">
+            <label class="required" for="t-pw">管理者パスワード</label>
+            <input type="text" id="t-pw" placeholder="初期パスワード" required />
+          </div>
+        </div>
+        <div style="margin-top:14px;"><button type="submit">企業を追加</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>企業一覧</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>ID</th><th>企業名 / slug</th><th>管理者</th><th>予約件数</th>
+            <th>補助額</th><th>予約機能</th><th>問診機能</th><th>受診者URL</th><th>操作</th>
+          </tr></thead>
+          <tbody id="tenant-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <div id="toast" class="toast"></div>
+  <script src="/common.js"></script>
+  <script src="/super.js"></script>
+</body>
+</html>

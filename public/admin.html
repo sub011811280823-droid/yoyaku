@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>企業管理 | 健診SaaS</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1><span class="brand-badge">🩺</span> <span id="tenant-name">企業管理</span></h1>
+    <nav class="nav">
+      <a id="public-link" href="#" target="_blank">受診者画面 ↗</a>
+      <a href="#" id="logout">ログアウト</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab active" data-tab="reservations">予約管理</button>
+      <button class="tab" data-tab="slots">予約枠</button>
+      <button class="tab" data-tab="courses">コース</button>
+      <button class="tab" data-tab="options">オプション検査</button>
+      <button class="tab" data-tab="employees">従業員マスタ</button>
+      <button class="tab" data-tab="questions">問診設定</button>
+      <button class="tab" data-tab="responses">問診回答</button>
+      <button class="tab" data-tab="settings">設定</button>
+    </div>
+
+    <!-- 予約管理 -->
+    <section id="tab-reservations">
+      <div class="page-head"><h2>予約管理</h2><p>受診者の予約状況の確認・ステータス変更・エクスポートができます。</p></div>
+      <div class="summary" id="res-summary"></div>
+      <div class="card">
+        <div class="toolbar">
+          <div class="col"><label for="f-date">受診日</label><input type="date" id="f-date" /></div>
+          <div class="col"><label for="f-status">状態</label>
+            <select id="f-status"><option value="">すべて</option><option value="confirmed">確定</option><option value="cancelled">キャンセル</option></select>
+          </div>
+          <div class="col" style="display:flex;align-items:flex-end;gap:8px;">
+            <button class="secondary" id="f-clear">条件クリア</button>
+          </div>
+          <div class="col" style="display:flex;align-items:flex-end;gap:8px;margin-left:auto;">
+            <a href="/api/admin/export.csv"><button class="secondary" type="button">⬇ CSV</button></a>
+            <a href="/api/admin/export.xlsx"><button type="button">⬇ Excel</button></a>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>受診日</th><th>時間</th><th>コース</th><th>氏名</th><th>性別</th>
+              <th>オプション</th><th>自己負担</th><th>連絡先</th><th>状態</th><th>操作</th>
+            </tr></thead>
+            <tbody id="res-tbody"></tbody>
+          </table>
+        </div>
+        <p id="res-empty" class="empty hidden"><span class="ico">📭</span>該当する予約がありません。</p>
+      </div>
+    </section>
+
+    <!-- 予約枠 -->
+    <section id="tab-slots" class="hidden">
+      <div class="page-head"><h2>予約枠</h2><p>受診可能な日時とコース・定員を設定します。</p></div>
+      <div class="card">
+        <h2>予約枠を作成</h2>
+        <form id="slot-form">
+          <div class="row">
+            <div class="col"><label class="required" for="s-date">日付</label><input type="date" id="s-date" required /></div>
+            <div class="col"><label class="required" for="s-time">開始時間</label><input type="time" id="s-time" step="300" required /></div>
+            <div class="col"><label class="required" for="s-course">コース</label><select id="s-course" required></select></div>
+            <div class="col"><label class="required" for="s-cap">定員</label><input type="number" id="s-cap" min="1" value="5" required /></div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <button type="submit">＋ 枠を追加</button>
+            <label style="display:flex;align-items:center;gap:6px;margin:0;font-weight:500;color:var(--ink-2);">
+              <input type="checkbox" id="bulk" style="width:auto;" />一定間隔でまとめて作成</label>
+            <span id="bulk-opts" class="hidden" style="display:flex;gap:8px;align-items:center;">
+              <input type="time" id="s-end" step="300" style="width:auto;" />まで
+              <input type="number" id="s-int" min="5" step="5" value="30" style="width:80px;" />分間隔</span>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>登録済みの枠</h2>
+          <div class="toolbar" style="margin:0;"><div class="col"><label for="slot-fdate">日付で絞り込み</label><input type="date" id="slot-fdate" /></div>
+          <div class="col" style="display:flex;align-items:flex-end;"><button class="secondary" id="slot-fclear">クリア</button></div></div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>日付</th><th>時間</th><th>コース</th><th>定員</th><th>予約</th><th>残</th><th>操作</th></tr></thead>
+          <tbody id="slot-tbody"></tbody>
+        </table></div>
+        <p id="slot-empty" class="empty hidden"><span class="ico">🗓️</span>枠がありません。</p>
+      </div>
+    </section>
+
+    <!-- コース -->
+    <section id="tab-courses" class="hidden">
+      <div class="page-head"><h2>健診コース</h2><p>コース名と料金を管理します。各行で直接編集できます。</p></div>
+      <div class="card">
+        <h2>コースを追加</h2>
+        <form id="course-form" class="row">
+          <div class="col"><label class="required" for="co-name">コース名</label><input type="text" id="co-name" required /></div>
+          <div class="col"><label class="required" for="co-price">料金（円）</label><input type="number" id="co-price" min="0" value="0" required /></div>
+          <div class="col" style="display:flex;align-items:flex-end;"><button type="submit">＋ 追加</button></div>
+        </form>
+      </div>
+      <div class="card">
+        <h2>コース一覧</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>コース名</th><th>料金</th><th>状態</th><th>操作</th></tr></thead>
+          <tbody id="course-tbody"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- オプション -->
+    <section id="tab-options" class="hidden">
+      <div class="page-head"><h2>オプション検査</h2><p>条件（性別・年齢）に合致する受診者だけが選択できる追加検査を管理します。</p></div>
+      <div class="card">
+        <h2 id="op-form-title">オプション検査を追加</h2>
+        <form id="option-form">
+          <input type="hidden" id="op-id" />
+          <div class="row">
+            <div class="col"><label class="required" for="op-name">名称</label><input type="text" id="op-name" required /></div>
+            <div class="col"><label class="required" for="op-price">金額（円）</label><input type="number" id="op-price" min="0" value="0" required /></div>
+            <div class="col"><label for="op-gender">対象性別</label>
+              <select id="op-gender"><option value="any">指定なし</option><option value="男性">男性</option><option value="女性">女性</option></select></div>
+            <div class="col"><label for="op-min">最低年齢</label><input type="number" id="op-min" min="0" placeholder="任意" /></div>
+            <div class="col"><label for="op-max">最高年齢</label><input type="number" id="op-max" min="0" placeholder="任意" /></div>
+          </div>
+          <div style="margin-top:14px;" class="btn-row">
+            <button type="submit" id="op-submit">＋ 追加</button>
+            <button type="button" class="secondary hidden" id="op-cancel">編集をやめる</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <h2>オプション一覧</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>名称</th><th>金額</th><th>条件</th><th>状態</th><th>操作</th></tr></thead>
+          <tbody id="option-tbody"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- 従業員マスタ -->
+    <section id="tab-employees" class="hidden">
+      <div class="page-head"><h2>従業員マスタ</h2><p>従業員の登録・検索・補助額設定、CSV/XLSXのインポート・エクスポートができます。</p></div>
+      <div class="card">
+        <h2>検索・絞り込み</h2>
+        <div class="toolbar">
+          <div class="col"><label for="e-q">キーワード</label><input type="text" id="e-q" placeholder="氏名・社員番号・メール" /></div>
+          <div class="col"><label for="e-dep">部署</label><select id="e-dep"><option value="">すべて</option></select></div>
+          <div class="col"><label for="e-active">状態</label><select id="e-active"><option value="">すべて</option><option value="1">有効</option><option value="0">無効</option></select></div>
+          <div class="col"><label for="e-min">補助額(下限)</label><input type="number" id="e-min" min="0" placeholder="任意" /></div>
+          <div class="col"><label for="e-max">補助額(上限)</label><input type="number" id="e-max" min="0" placeholder="任意" /></div>
+          <div class="col" style="display:flex;align-items:flex-end;gap:8px;">
+            <button id="e-search">🔍 検索</button><button class="secondary" id="e-clear">クリア</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>インポート / エクスポート / 補助額の一括設定</h2>
+        <div class="row" style="align-items:flex-end;">
+          <div class="col">
+            <label for="e-file">インポート（CSV / XLSX）</label>
+            <input type="file" id="e-file" accept=".csv,.xlsx" />
+            <p class="field-hint">社員番号をキーに登録/更新。ヘッダー: 社員番号,氏名,フリガナ,メール,部署,生年月日,性別,電話,補助額,パスワード,有効</p>
+          </div>
+          <div class="col" style="display:flex;align-items:flex-end;"><button id="e-import">⬆ インポート実行</button></div>
+          <div class="col" style="display:flex;align-items:flex-end;gap:8px;">
+            <a href="/api/admin/employees/export.csv"><button class="secondary" type="button">⬇ CSV</button></a>
+            <a href="/api/admin/employees/export.xlsx"><button type="button">⬇ XLSX</button></a>
+          </div>
+        </div>
+        <div class="divider-label">補助額の一括置き換え</div>
+        <div class="row" style="align-items:flex-end;">
+          <div class="col"><label for="e-bulk">設定する補助額（現在の検索条件に合致する従業員へ適用）</label>
+            <input type="number" id="e-bulk" min="0" placeholder="例: 5000" style="max-width:220px;" /></div>
+          <div class="col" style="display:flex;align-items:flex-end;"><button class="danger" id="e-bulk-apply">一括置き換えを実行</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 id="e-form-title">従業員を追加</h2>
+        <form id="employee-form">
+          <input type="hidden" id="e-id" />
+          <div class="row">
+            <div class="col"><label for="e-code">社員番号</label><input type="text" id="e-code" /></div>
+            <div class="col"><label class="required" for="e-name">氏名</label><input type="text" id="e-name" required /></div>
+            <div class="col"><label for="e-kana">フリガナ</label><input type="text" id="e-kana" /></div>
+            <div class="col"><label for="e-dept">部署</label><input type="text" id="e-dept" /></div>
+          </div>
+          <div class="row">
+            <div class="col"><label for="e-email">メール</label><input type="email" id="e-email" /></div>
+            <div class="col"><label for="e-birthday">生年月日</label><input type="date" id="e-birthday" /></div>
+            <div class="col"><label for="e-gender">性別</label>
+              <select id="e-gender"><option value="">未設定</option><option value="男性">男性</option><option value="女性">女性</option><option value="その他">その他</option></select></div>
+            <div class="col"><label for="e-phone">電話</label><input type="text" id="e-phone" /></div>
+          </div>
+          <div class="row">
+            <div class="col"><label for="e-subsidy">個別補助額（空欄=企業既定）</label><input type="number" id="e-subsidy" min="0" placeholder="企業既定を使用" /></div>
+            <div class="col"><label for="e-password">個別パスワード（パスワード方式=個別設定の場合）</label><input type="text" id="e-password" /></div>
+            <div class="col" style="display:flex;align-items:flex-end;gap:8px;">
+              <button type="submit" id="e-submit">＋ 追加</button>
+              <button type="button" class="secondary hidden" id="e-cancel">編集をやめる</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>従業員一覧 <span class="muted" id="e-count" style="font-size:.8rem;font-weight:500;"></span></h2></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>社員番号</th><th>氏名</th><th>部署</th><th>生年月日</th><th>性別</th><th>メール</th><th>補助額</th><th>状態</th><th>操作</th></tr></thead>
+          <tbody id="employee-tbody"></tbody>
+        </table></div>
+        <p id="employee-empty" class="empty hidden"><span class="ico">👥</span>該当する従業員がいません。</p>
+      </div>
+    </section>
+
+    <!-- 問診設定 -->
+    <section id="tab-questions" class="hidden">
+      <div class="page-head"><h2>問診設定</h2><p>受診者に表示する問診項目を自由に設計できます。各項目は編集・並べ替え可能です。</p></div>
+      <div class="card">
+        <h2 id="q-form-title">問診項目を追加</h2>
+        <form id="question-form">
+          <input type="hidden" id="q-id" />
+          <div class="row">
+            <div class="col" style="flex:2;"><label class="required" for="q-label">質問文</label><input type="text" id="q-label" required /></div>
+            <div class="col"><label for="q-type">回答形式</label>
+              <select id="q-type">
+                <option value="text">1行テキスト</option>
+                <option value="textarea">複数行テキスト</option>
+                <option value="number">数値</option>
+                <option value="radio">単一選択（ラジオ）</option>
+                <option value="checkbox">複数選択（チェック）</option>
+                <option value="select">プルダウン</option>
+              </select></div>
+            <div class="col" style="display:flex;align-items:flex-end;"><label style="display:flex;align-items:center;gap:6px;font-weight:500;color:var(--ink-2);margin:0;"><input type="checkbox" id="q-required" style="width:auto;" />必須</label></div>
+          </div>
+          <div id="q-choices-wrap" class="hidden">
+            <label for="q-choices">選択肢（1行に1つ）</label>
+            <textarea id="q-choices" placeholder="はい&#10;いいえ"></textarea>
+          </div>
+          <div style="margin-top:14px;" class="btn-row">
+            <button type="submit" id="q-submit">＋ 項目を追加</button>
+            <button type="button" class="secondary hidden" id="q-cancel">編集をやめる</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <h2>問診項目一覧</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>順</th><th>質問文</th><th>形式</th><th>選択肢</th><th>必須</th><th>状態</th><th>操作</th></tr></thead>
+          <tbody id="question-tbody"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- 問診回答 -->
+    <section id="tab-responses" class="hidden">
+      <div class="page-head"><h2>問診回答</h2><p>受診者から送信された問診回答の一覧・エクスポートができます。</p></div>
+      <div class="card">
+        <div class="card-head">
+          <h2>回答一覧</h2>
+          <div class="btn-row">
+            <a href="/api/admin/responses/export.csv"><button class="secondary" type="button">⬇ CSV</button></a>
+            <a href="/api/admin/responses/export.xlsx"><button type="button">⬇ Excel</button></a>
+          </div>
+        </div>
+        <div id="responses"></div>
+        <p id="responses-empty" class="empty hidden"><span class="ico">📝</span>回答がまだありません。</p>
+      </div>
+    </section>
+
+    <!-- 設定 -->
+    <section id="tab-settings" class="hidden">
+      <div class="page-head"><h2>設定</h2><p>補助額・利用機能・従業員ログイン方式を設定します。</p></div>
+      <div class="card">
+        <fieldset>
+          <legend>補助額（企業既定）</legend>
+          <label for="set-subsidy">補助額（円／件）</label>
+          <input type="number" id="set-subsidy" min="0" style="max-width:220px;" />
+          <p class="field-hint">従業員に個別補助額が無い場合に使用。自己負担額 = コース料金 + オプション − 補助額。</p>
+        </fieldset>
+        <fieldset>
+          <legend>利用する機能</legend>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:500;color:var(--ink-2);"><input type="checkbox" id="set-res" style="width:auto;" /> 予約機能を使う</label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:500;color:var(--ink-2);margin-top:8px;"><input type="checkbox" id="set-q" style="width:auto;" /> 問診機能を使う</label>
+        </fieldset>
+        <fieldset>
+          <legend>従業員ログイン方式</legend>
+          <div class="row">
+            <div class="col"><label for="set-loginid">ログインIDに使う項目</label>
+              <select id="set-loginid"><option value="employee_code">社員番号</option><option value="email">メールアドレス</option></select></div>
+            <div class="col"><label for="set-pw">パスワードに使う項目</label>
+              <select id="set-pw"><option value="birthday">生年月日</option><option value="employee_code">社員番号</option><option value="custom">個別設定パスワード</option></select></div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:500;color:var(--ink-2);margin-top:10px;"><input type="checkbox" id="set-require" style="width:auto;" /> 予約時に従業員ログインを必須にする</label>
+        </fieldset>
+        <button id="set-save">設定を保存</button>
+      </div>
+      <div class="card">
+        <h2>受診者向けURL</h2>
+        <p>予約画面: <a id="link-reserve" href="#" target="_blank"></a></p>
+        <p>問診画面: <a id="link-q" href="#" target="_blank"></a></p>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="/common.js"></script>
+  <script src="/admin.js"></script>
+</body>
+</html>

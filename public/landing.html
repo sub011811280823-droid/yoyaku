@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>健康診断 予約・問診システム</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .hero{ text-align:center; padding:46px 20px 8px; }
+    .hero .logo{ width:62px;height:62px;border-radius:16px;display:grid;place-items:center;margin:0 auto 16px;background:linear-gradient(135deg,var(--brand-500),var(--accent-500));color:#fff;font-size:30px;box-shadow:var(--shadow-lg); }
+    .hero h1{ font-size:2rem; margin:0 0 8px; font-weight:800; letter-spacing:-.02em; }
+    .hero p{ color:var(--muted); max-width:540px; margin:0 auto; }
+    .role-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:24px 0; }
+    .role-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow-sm); transition:box-shadow .15s, transform .1s; }
+    .role-card:hover{ box-shadow:var(--shadow); transform:translateY(-2px); }
+    .role-card .ic{ font-size:24px; }
+    .role-card h3{ margin:8px 0 4px; }
+    .role-card p{ color:var(--muted); font-size:.86rem; margin:0 0 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="hero">
+      <div class="logo">🩺</div>
+      <h1>健康診断 予約・問診システム</h1>
+      <p>複数企業に対応したマルチテナント型の健診予約・問診プラットフォーム。</p>
+    </div>
+
+    <div class="role-grid">
+      <div class="role-card">
+        <div class="ic">👤</div><h3>受診者の方</h3>
+        <p>企業から案内された <code class="inline">/t/&lt;企業ID&gt;</code> からご予約ください。</p>
+      </div>
+      <a class="role-card" href="/admin/login" style="text-decoration:none;color:inherit;">
+        <div class="ic">🏢</div><h3>企業管理者</h3>
+        <p>予約枠・コース・従業員・問診を管理します。</p>
+        <button class="secondary small" type="button">ログイン →</button>
+      </a>
+      <a class="role-card" href="/super/login" style="text-decoration:none;color:inherit;">
+        <div class="ic">🛠️</div><h3>システム管理者</h3>
+        <p>企業（テナント）の追加・管理を行います。</p>
+        <button class="secondary small" type="button">ログイン →</button>
+      </a>
+    </div>
+
+    <div class="card">
+      <h2>デモ用アカウント</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>区分</th><th>ID</th><th>パスワード</th><th>入口</th></tr></thead>
+          <tbody>
+            <tr><td>スーパー管理者</td><td><code class="inline">superadmin</code></td><td><code class="inline">admin123</code></td><td><a href="/super/login">/super/login</a></td></tr>
+            <tr><td>企業A 管理者</td><td><code class="inline">demo-admin</code></td><td><code class="inline">admin123</code></td><td><a href="/admin/login">/admin/login</a></td></tr>
+            <tr><td>企業A 受診者（従業員ログイン例）</td><td colspan="2"><code class="inline">E001</code> / 生年月日 <code class="inline">1980-05-15</code></td><td><a href="/t/demo">/t/demo</a></td></tr>
+            <tr><td>企業B 受診者（問診のみ）</td><td colspan="2">—</td><td><a href="/t/clinicb">/t/clinicb</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
